@@ -28,6 +28,8 @@ fun main() {
     }
 
     for (word in dictionary) {
+
         println("Слово: ${word.originalWord}, Перевод: ${word.translation}, Правильные ответы: ${word.correctAnswersCount}")
+
     }
 }
