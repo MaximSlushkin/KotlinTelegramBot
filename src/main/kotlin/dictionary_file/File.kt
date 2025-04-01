@@ -26,7 +26,7 @@ fun main() {
             }
 
             "2" -> {
-                println("Вы выбрали пункт \"Статистика\"")
+                displayStatistics(dictionary)
             }
 
             "0" -> {
@@ -65,3 +65,16 @@ fun loadDictionary(): MutableList<Word> {
     }
     return dictionary
 }
+    fun displayStatistics(dictionary: List<Word>) {
+
+        val totalCount = dictionary.size
+        val learnedWords = dictionary.filter { it.correctAnswersCount >= 3 }
+        val learnedCount = learnedWords.size
+        val percent = if (totalCount > 0) {
+            (learnedCount * 100) / totalCount
+        } else {
+            0
+        }
+
+        println("Выучено $learnedCount из $totalCount слов | $percent%")
+    }
