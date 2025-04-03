@@ -2,7 +2,7 @@ package org.example.dictionary_file
 
 import java.io.File
 
-const val minCorrectAnswer = 3
+const val MIN_CORRECT_ANSWER = 3
 
 data class Word(
     val originalWord: String,
@@ -62,7 +62,7 @@ fun loadDictionary(): MutableList<Word> {
 
 fun displayStatistics(dictionary: List<Word>) {
     val totalCount = dictionary.size
-    val learnedWords = dictionary.filter { it.correctAnswersCount >= minCorrectAnswer }
+    val learnedWords = dictionary.filter { it.correctAnswersCount >= MIN_CORRECT_ANSWER }
     val learnedCount = learnedWords.size
     val percent = if (totalCount > 0) {
         (learnedCount * 100) / totalCount
@@ -75,7 +75,7 @@ fun displayStatistics(dictionary: List<Word>) {
 
 fun studyWords(dictionary: List<Word>) {
     while (true) {
-        val notLearnedList = dictionary.filter { it.correctAnswersCount < minCorrectAnswer }
+        val notLearnedList = dictionary.filter { it.correctAnswersCount < MIN_CORRECT_ANSWER }
 
         if (notLearnedList.isEmpty()) {
             println("Все слова в словаре выучены!")
@@ -107,17 +107,36 @@ fun studyWords(dictionary: List<Word>) {
             println("${index + 1} - $answer")
         }
 
-        val userAnswer = readLine()?.toIntOrNull()
+        println("----------")
+        println("0 - Меню")
 
-        if (userAnswer != null && userAnswer in 1..4) {
-            if (answers[userAnswer - 1] == correctAnswer.translation) {
-                println("Правильно!")
-                correctAnswer.correctAnswersCount++
-            } else {
-                println("Неправильно. Правильный ответ: ${correctAnswer.translation}")
+        val userAnswerInput = readLine()?.toIntOrNull()
+
+        // Проверка ввода
+        when {
+            userAnswerInput == 0 -> return // Возврат в меню
+            userAnswerInput != null && userAnswerInput in 1..4 -> {
+                if (answers[userAnswerInput - 1] == correctAnswer.translation) {
+                    println("Правильно!")
+                    correctAnswer.correctAnswersCount++
+                    saveDictionary(dictionary) // Сохраняем прогресс
+                } else {
+                    println("Неправильно! ${correctAnswer.originalWord} – это ${correctAnswer.translation}")
+                }
             }
-        } else {
-            println("Введите номер от 1 до 4.")
+
+            else -> {
+                println("Введите номер от 0 до 4.")
+            }
+        }
+    }
+}
+
+fun saveDictionary(dictionary: List<Word>) {
+    val wordsFile: File = File("word.txt")
+    wordsFile.printWriter().use { out ->
+        for (word in dictionary) {
+            out.println("${word.originalWord}|${word.translation}|${word.correctAnswersCount}")
         }
     }
 }
