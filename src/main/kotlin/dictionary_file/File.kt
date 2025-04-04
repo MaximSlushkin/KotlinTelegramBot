@@ -11,7 +11,8 @@ data class Word(
 )
 
 fun main() {
-    val dictionary = loadDictionary()
+
+    val trainer = LearnWordsTrainer()
 
     while (true) {
         println("Меню:")
@@ -23,11 +24,11 @@ fun main() {
 
         when (userInput) {
             "1" -> {
-                studyWords(dictionary)
+                studyWords(trainer.dictionary)
             }
 
             "2" -> {
-                displayStatistics(dictionary)
+                displayStatistics(trainer.dictionary)
             }
 
             "0" -> {
@@ -39,25 +40,6 @@ fun main() {
         }
         println()
     }
-}
-
-fun loadDictionary(): MutableList<Word> {
-    val wordsFile: File = File("word.txt")
-    val dictionary = mutableListOf<Word>()
-
-    val lines: List<String> = wordsFile.readLines()
-    for (line in lines) {
-        val parts = line.split("|")
-
-        val word = parts[0]
-        val translation = parts[1]
-        val correctAnswersCount = parts.getOrNull(2)?.toIntOrNull() ?: 0
-
-        val wordObject = Word(word, translation, correctAnswersCount)
-        dictionary.add(wordObject)
-    }
-
-    return dictionary
 }
 
 fun displayStatistics(dictionary: List<Word>) {
@@ -112,14 +94,14 @@ fun studyWords(dictionary: List<Word>) {
 
         val userAnswerInput = readLine()?.toIntOrNull()
 
-        // Проверка ввода
         when {
-            userAnswerInput == 0 -> return // Возврат в меню
+            userAnswerInput == 0 -> return
             userAnswerInput != null && userAnswerInput in 1..4 -> {
                 if (answers[userAnswerInput - 1] == correctAnswer.translation) {
                     println("Правильно!")
                     correctAnswer.correctAnswersCount++
-                    saveDictionary(dictionary) // Сохраняем прогресс
+//                    saveDictionary(dictionary) - здесь выдает ошибку !!!!!
+
                 } else {
                     println("Неправильно! ${correctAnswer.originalWord} – это ${correctAnswer.translation}")
                 }
@@ -128,15 +110,6 @@ fun studyWords(dictionary: List<Word>) {
             else -> {
                 println("Введите номер от 0 до 4.")
             }
-        }
-    }
-}
-
-fun saveDictionary(dictionary: List<Word>) {
-    val wordsFile: File = File("word.txt")
-    wordsFile.printWriter().use { out ->
-        for (word in dictionary) {
-            out.println("${word.originalWord}|${word.translation}|${word.correctAnswersCount}")
         }
     }
 }
