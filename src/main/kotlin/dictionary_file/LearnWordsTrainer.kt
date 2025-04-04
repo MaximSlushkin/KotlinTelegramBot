@@ -2,6 +2,17 @@ package org.example.dictionary_file
 
 import java.io.File
 
+data class Statistics(
+    val learnedWords: Int,
+    val totalCount: Int,
+    val percent: Int,
+)
+
+data class Question(
+    val variants: List<Word>,
+
+)
+
 class LearnWordsTrainer {
 
     val dictionary = loadDictionary()
@@ -32,5 +43,13 @@ class LearnWordsTrainer {
                 out.println("${word.originalWord}|${word.translation}|${word.correctAnswersCount}")
             }
         }
+    }
+
+    fun getStatistics(): Statistics {
+        val learnedWords = dictionary.filter { it.correctAnswersCount >= MIN_CORRECT_ANSWER }.size
+        val totalCount = dictionary.size
+        val percent = learnedWords * 100 / totalCount
+
+        return Statistics(learnedWords, totalCount, percent)
     }
 }

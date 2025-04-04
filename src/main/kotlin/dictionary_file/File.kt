@@ -20,96 +20,52 @@ fun main() {
         println("2 - Статистика")
         println("0 - Выход")
 
-        val userInput = readln()
+        when (readln().toIntOrNull()) {
+            1 -> {
+                while (true) {
+                    val notLearnedList = trainer.dictionary.filter { it.correctAnswersCount < MIN_CORRECT_ANSWER }
 
-        when (userInput) {
-            "1" -> {
-                studyWords(trainer.dictionary)
+                    if (notLearnedList.isEmpty()) {
+                        println("Все слова выучены!")
+                        break
+                    } else {
+                        val questionWords = notLearnedList.take(4).shuffled()
+                        val correctAnswer = questionWords.random()
+
+                        println(
+                            "${correctAnswer.originalWord}\n" +
+                                    "1 - ${questionWords[0].translation}\n2 - ${questionWords[1].translation}\n" +
+                                    "3 - ${questionWords[2].translation}\n4 - ${questionWords[3].translation}\n" +
+                                    "----------\n" +
+                                    "0 - В меню"
+                        )
+
+                        val userAnswerInput = readln().toIntOrNull()
+                        if (userAnswerInput == 0) break
+                        val correctAnswerIndex = questionWords.indexOf(correctAnswer)
+
+                        if (userAnswerInput == correctAnswerIndex + 1) {
+                            correctAnswer.correctAnswersCount++
+                            trainer.saveDictionary(trainer.dictionary)
+                            println("Правильно!\n")
+                        } else {
+                            println("Неправильно! ${correctAnswer.originalWord} - это ${correctAnswer.translation}\n")
+                        }
+                    }
+                }
             }
 
-            "2" -> {
-                displayStatistics(trainer.dictionary)
+            2 -> {
+            val statistics = trainer.getStatistics()
+                println("Выучено ${statistics.learnedWords} из ${statistics.totalCount} слов | ${statistics.percent}%")
             }
 
-            "0" -> {
+            0 -> {
                 println("Выход из программы")
                 break
             }
 
             else -> println("Введите число 1, 2 или 0")
-        }
-        println()
-    }
-}
-
-fun displayStatistics(dictionary: List<Word>) {
-    val totalCount = dictionary.size
-    val learnedWords = dictionary.filter { it.correctAnswersCount >= MIN_CORRECT_ANSWER }
-    val learnedCount = learnedWords.size
-    val percent = if (totalCount > 0) {
-        (learnedCount * 100) / totalCount
-    } else {
-        0
-    }
-
-    println("Выучено $learnedCount из $totalCount слов | $percent%")
-}
-
-fun studyWords(dictionary: List<Word>) {
-    while (true) {
-        val notLearnedList = dictionary.filter { it.correctAnswersCount < MIN_CORRECT_ANSWER }
-
-        if (notLearnedList.isEmpty()) {
-            println("Все слова в словаре выучены!")
-            return
-        }
-
-        val questionWords = notLearnedList.shuffled().take(4)
-        val correctAnswer = questionWords.random()
-
-        println()
-        println(correctAnswer.originalWord + ":")
-
-        val answers = mutableListOf(correctAnswer.translation)
-
-        while (answers.size < 4) {
-            val incorrectAnswer = dictionary.filter { it != correctAnswer }
-                .shuffled()
-                .take(1)
-                .map { it.translation }
-                .first()
-            if (incorrectAnswer !in answers) {
-                answers.add(incorrectAnswer)
-            }
-        }
-
-        answers.shuffle()
-
-        answers.forEachIndexed { index, answer ->
-            println("${index + 1} - $answer")
-        }
-
-        println("----------")
-        println("0 - Меню")
-
-        val userAnswerInput = readLine()?.toIntOrNull()
-
-        when {
-            userAnswerInput == 0 -> return
-            userAnswerInput != null && userAnswerInput in 1..4 -> {
-                if (answers[userAnswerInput - 1] == correctAnswer.translation) {
-                    println("Правильно!")
-                    correctAnswer.correctAnswersCount++
-//                    saveDictionary(dictionary) - здесь выдает ошибку !!!!!
-
-                } else {
-                    println("Неправильно! ${correctAnswer.originalWord} – это ${correctAnswer.translation}")
-                }
-            }
-
-            else -> {
-                println("Введите номер от 0 до 4.")
-            }
         }
     }
 }
