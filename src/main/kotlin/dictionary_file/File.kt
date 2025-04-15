@@ -8,7 +8,7 @@ fun Question.asConsoleString(): String {
     val variants = this.variants
         .mapIndexed { index: Int, word: Word -> "${index + 1} - ${word.translation}"}
         .joinToString(separator = "\n")
-    return this.correctAnswer.originalWord + "\n"+ variants + "\n0 - Выйти в меню"
+    return this.correctAnswer.originalWord + "\n"+ variants + "\n-----------------" + "\n0 - Выйти в меню"
 }
 
 fun main() {
