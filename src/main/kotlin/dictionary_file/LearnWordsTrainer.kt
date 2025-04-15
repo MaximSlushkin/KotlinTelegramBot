@@ -2,6 +2,12 @@ package org.example.dictionary_file
 
 import java.io.File
 
+data class Word(
+    val originalWord: String,
+    val translation: String,
+    var correctAnswersCount: Int = 0
+)
+
 data class Statistics(
     val learnedWords: Int,
     val totalCount: Int,
@@ -10,12 +16,48 @@ data class Statistics(
 
 data class Question(
     val variants: List<Word>,
+    val correctAnswer: Word,
 
-)
+    )
 
-class LearnWordsTrainer {
+class LearnWordsTrainer(private var question: Question? = null) {
+    private val dictionary = loadDictionary()
 
-    val dictionary = loadDictionary()
+    fun getStatistics(): Statistics {
+        val learnedWords = dictionary.filter { it.correctAnswersCount >= MIN_CORRECT_ANSWER }.size
+        val totalCount = dictionary.size
+        val percent = learnedWords * 100 / totalCount
+
+        return Statistics(learnedWords, totalCount, percent)
+    }
+
+    fun getNextQuestion(): Question? {
+        val notLearnedList = dictionary.filter { it.correctAnswersCount < MIN_CORRECT_ANSWER }
+        if (notLearnedList.isEmpty()) return null
+        val questionWords = notLearnedList.take(ANSWER_OPTIONS).shuffled()
+        val correctAnswer = questionWords.random()
+
+        question = Question(
+            variants = questionWords,
+            correctAnswer = correctAnswer,
+        )
+        return question
+    }
+
+    fun checkAnswer(userAnswerIndex: Int?): Boolean {
+
+        return question?.let {
+            val correctAnswerIndex = it.variants.indexOf(it.correctAnswer)
+
+            if (correctAnswerIndex == userAnswerIndex) {
+                it.correctAnswer.correctAnswersCount++
+                saveDictionary(dictionary)
+                true
+            } else {
+                false
+            }
+        } ?: false
+    }
 
     fun loadDictionary(): MutableList<Word> {
         val wordsFile: File = File("word.txt")
@@ -32,7 +74,6 @@ class LearnWordsTrainer {
             val wordObject = Word(word, translation, correctAnswersCount)
             dictionary.add(wordObject)
         }
-
         return dictionary
     }
 
@@ -43,13 +84,5 @@ class LearnWordsTrainer {
                 out.println("${word.originalWord}|${word.translation}|${word.correctAnswersCount}")
             }
         }
-    }
-
-    fun getStatistics(): Statistics {
-        val learnedWords = dictionary.filter { it.correctAnswersCount >= MIN_CORRECT_ANSWER }.size
-        val totalCount = dictionary.size
-        val percent = learnedWords * 100 / totalCount
-
-        return Statistics(learnedWords, totalCount, percent)
     }
 }
