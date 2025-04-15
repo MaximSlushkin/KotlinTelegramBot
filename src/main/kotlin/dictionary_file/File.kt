@@ -3,7 +3,7 @@ package org.example.dictionary_file
 const val MIN_CORRECT_ANSWER = 3
 const val ANSWER_OPTIONS = 4
 
-fun Question.asConsoleString(question: Question): String {
+fun Question.asConsoleString(): String {
 
     val variants = this.variants
         .mapIndexed { index: Int, word: Word -> "${index + 1} - ${word.translation}"}
@@ -31,10 +31,16 @@ fun main() {
                         break
                     }
 
-//                    println(question.asConsoleString()) - здесь выдает ошибку
+                   println(question.asConsoleString())
 
                     val userAnswerInput = readln().toIntOrNull()
                     if (userAnswerInput == 0) break
+                    if (trainer.checkAnswer(userAnswerInput?.minus(1))){
+                        println("Правильно")
+                    } else {
+                        println("Неправильно! ${question.correctAnswer.originalWord} - это ${question.correctAnswer.translation}")
+                    }
+
                 }
             }
             2 -> {
