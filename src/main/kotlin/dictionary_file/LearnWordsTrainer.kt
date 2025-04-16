@@ -17,8 +17,7 @@ data class Statistics(
 data class Question(
     val variants: List<Word>,
     val correctAnswer: Word,
-
-    )
+)
 
 class LearnWordsTrainer(private var question: Question? = null) {
     private val dictionary = loadDictionary()
@@ -32,26 +31,38 @@ class LearnWordsTrainer(private var question: Question? = null) {
     }
 
     fun getNextQuestion(): Question? {
+
         val notLearnedList = dictionary.filter { it.correctAnswersCount < MIN_CORRECT_ANSWER }
+        val learnedList = dictionary.filter { it.correctAnswersCount >= MIN_CORRECT_ANSWER }
+
         if (notLearnedList.isEmpty()) return null
-        val questionWords = notLearnedList.take(ANSWER_OPTIONS).shuffled()
+
+        var questionWords = notLearnedList.shuffled().take(ANSWER_OPTIONS)
         val correctAnswer = questionWords.random()
+        val remainingOptionsCount = ANSWER_OPTIONS - questionWords.size
+        if (remainingOptionsCount > 0) {
+            val additionalWords = learnedList.shuffled().take(remainingOptionsCount)
+            questionWords += additionalWords
+        }
+
+        val shuffledVariants = questionWords.shuffled()
 
         question = Question(
-            variants = questionWords,
+            variants = shuffledVariants,
             correctAnswer = correctAnswer,
         )
         return question
     }
 
     fun checkAnswer(userAnswerIndex: Int?): Boolean {
-
         return question?.let {
             val correctAnswerIndex = it.variants.indexOf(it.correctAnswer)
 
             if (correctAnswerIndex == userAnswerIndex) {
-                it.correctAnswer.correctAnswersCount++
-                saveDictionary(dictionary)
+                if (it.correctAnswer.correctAnswersCount < MIN_CORRECT_ANSWER) {
+                    it.correctAnswer.correctAnswersCount++
+                    saveDictionary(dictionary)
+                }
                 true
             } else {
                 false
