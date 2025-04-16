@@ -33,7 +33,6 @@ class LearnWordsTrainer(private var question: Question? = null) {
     fun getNextQuestion(): Question? {
 
         val notLearnedList = dictionary.filter { it.correctAnswersCount < MIN_CORRECT_ANSWER }
-        val learnedList = dictionary.filter { it.correctAnswersCount >= MIN_CORRECT_ANSWER }
 
         if (notLearnedList.isEmpty()) return null
 
@@ -41,6 +40,7 @@ class LearnWordsTrainer(private var question: Question? = null) {
         val correctAnswer = questionWords.random()
         val remainingOptionsCount = ANSWER_OPTIONS - questionWords.size
         if (remainingOptionsCount > 0) {
+            val learnedList = dictionary.filter { it.correctAnswersCount >= MIN_CORRECT_ANSWER }
             val additionalWords = learnedList.shuffled().take(remainingOptionsCount)
             questionWords += additionalWords
         }
@@ -70,7 +70,7 @@ class LearnWordsTrainer(private var question: Question? = null) {
         } ?: false
     }
 
-    fun loadDictionary(): MutableList<Word> {
+    private fun loadDictionary(): List<Word> {
         val wordsFile: File = File("word.txt")
         val dictionary = mutableListOf<Word>()
 
@@ -88,7 +88,7 @@ class LearnWordsTrainer(private var question: Question? = null) {
         return dictionary
     }
 
-    fun saveDictionary(dictionary: List<Word>) {
+    private fun saveDictionary(dictionary: List<Word>) {
         val wordsFile: File = File("word.txt")
         wordsFile.printWriter().use { out ->
             for (word in dictionary) {
