@@ -2,3 +2,4 @@ hello|привет
 dog|собака
 cat|кошка
 thanks|спасибо
+house|дом
