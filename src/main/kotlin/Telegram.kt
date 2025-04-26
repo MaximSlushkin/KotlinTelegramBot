@@ -41,12 +41,9 @@ fun main(args: Array<String>) {
         println(updates)
 
         val updateIdMatch = regexFindUpdateId.find(updates)
+        val currentUpdateId = regexFindUpdateId.find(updates)?.groups?.get(1)?.value?.toIntOrNull() ?: continue
 
-        if (updateIdMatch != null && updateIdMatch.groups.size > 1) {
-            val currentUpdateId = regexFindUpdateId.find(updates)?.groups?.get(1)?.value?.toIntOrNull() ?: continue
-
-            updateId = currentUpdateId + 1
-        }
+        updateId = currentUpdateId + 1
 
         val chatIdMatch = regexFindChatId.find(updates)
         val textMatch = messageTextRegex.find(updates)
