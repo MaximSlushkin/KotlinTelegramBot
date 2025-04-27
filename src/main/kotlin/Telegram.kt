@@ -5,42 +5,54 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 
-fun main(args: Array<String>) {
+const val API = "https://api.telegram.org/bot"
 
-    val botToken = args[0]
-    var updateId = 0
+class TelegramBotService(private val botToken: String) {
+    private val client: HttpClient = HttpClient.newBuilder().build()
 
-    val messageTextRegex: Regex = "\"text\":\"(.+?)\"".toRegex()
-    val updateIdRegex = "\"update_id\"".toRegex()
+    fun getUpdates(updateId: Int): String {
+        val urlGetUpdates = "$API$botToken/getUpdates?offset=$updateId"
+        val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlGetUpdates)).build()
+        val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
+        return response.body()
+    }
 
-    while (true) {
-        Thread.sleep(2000)
-
-        val updates: String = getUpdates(botToken, updateId)
-        println(updates)
-
-        val updateIdMatch = updateIdRegex.find(updates)
-        val currentUpdateId = updateIdMatch?.groups?.get(1)?.value?.toIntOrNull()
-
-        if (currentUpdateId != null) {
-            updateId = currentUpdateId + 1
-        }
-
-
-        val matchResult: MatchResult? = messageTextRegex.find(updates)
-        val text = matchResult?.groups?.get(1)?.value
-
-        if (text != null) {
-            println("Получено сообщение: $text")
-        }
+    fun sendMessage(chatId: Long, text: String): String {
+        val urlSendMessage = "$API$botToken/sendMessage?chat_id=$chatId&text=$text"
+        val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlSendMessage)).build()
+        val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
+        return response.body()
     }
 }
 
-fun getUpdates(botToken: String, updateId: Int): String {
+fun main(args: Array<String>) {
 
-    val urlGetUpdates = "https://api.telegram.org/bot$botToken/getUpdates?offset=$updateId"
-    val client: HttpClient = HttpClient.newBuilder().build()
-    val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlGetUpdates)).build()
-    val response: HttpResponse<String>? = client.send(request, HttpResponse.BodyHandlers.ofString())
-    return response?.body().toString()
+    val botToken = args[0]
+    val botService = TelegramBotService(botToken)
+    var updateId = 0
+
+    val regexFindUpdateId = "\"update_id\":(\\d+)".toRegex()
+    val messageTextRegex: Regex = "\"text\":\"(.+?)\"".toRegex()
+    val regexFindChatId = "\"chat\":\\{\"id\":(.+?),\"".toRegex()
+
+    while (true) {
+        Thread.sleep(2000)
+        val updates: String = botService.getUpdates(updateId)
+        println(updates)
+
+        val currentUpdateId = regexFindUpdateId.find(updates)?.groups?.get(1)?.value?.toIntOrNull() ?: continue
+
+        updateId = currentUpdateId + 1
+
+        val chatIdMatch = regexFindChatId.find(updates)
+        val textMatch = messageTextRegex.find(updates)
+
+        val chatId = chatIdMatch?.groups?.get(1)?.value?.toLongOrNull() ?: continue
+        val text = textMatch?.groups?.get(1)?.value
+
+        if (text != null) {
+            println("Получено сообщение: $text от chat_id: $chatId")
+            botService.sendMessage(chatId, text)
+        }
+    }
 }
