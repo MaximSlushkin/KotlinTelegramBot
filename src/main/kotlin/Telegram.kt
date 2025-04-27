@@ -33,14 +33,13 @@ fun main(args: Array<String>) {
 
     val regexFindUpdateId = "\"update_id\":(\\d+)".toRegex()
     val messageTextRegex: Regex = "\"text\":\"(.+?)\"".toRegex()
-    val regexFindChatId = "\"chat\":\\{\"id\":(.+?)\"".toRegex()
+    val regexFindChatId = "\"chat\":\\{\"id\":(.+?),\"".toRegex()
 
     while (true) {
         Thread.sleep(2000)
         val updates: String = botService.getUpdates(updateId)
         println(updates)
 
-        val updateIdMatch = regexFindUpdateId.find(updates)
         val currentUpdateId = regexFindUpdateId.find(updates)?.groups?.get(1)?.value?.toIntOrNull() ?: continue
 
         updateId = currentUpdateId + 1
