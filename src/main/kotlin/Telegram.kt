@@ -6,9 +6,10 @@ import java.net.URLEncoder
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
-import java.nio.charset.StandardCharsets
 
 const val API = "https://api.telegram.org/bot"
+const val STATISTICS_CLICKED = "statistics_clicked"
+const val LEARN_WORDS_CLICKED = "learn_words_clicked"
 
 class TelegramBotService(private val botToken: String) {
     private val client: HttpClient = HttpClient.newBuilder().build()
@@ -41,11 +42,11 @@ class TelegramBotService(private val botToken: String) {
                         [
                             {
                                 "text": "Изучить слова",
-                                "callback_data": "learn_words_clicked"
+                                "callback_data": "$LEARN_WORDS_CLICKED"
                             },
                             {
                                 "text": "Статистика",
-                                "callback_data": "statistics_clicked"
+                                "callback_data": "$STATISTICS_CLICKED"
                             }
                         ]
                     ]
@@ -97,8 +98,17 @@ fun main(args: Array<String>) {
             if (text.lowercase() == "menu") {
                 botService.sendMenu(chatId)
             }
-            if (data?.lowercase() == "statistics_clicked") {
-                botService.sendMessage(chatId, "Выучено 10 из 10 слов | 100%")
+
+            if (data != null) {
+
+                when (data) {
+                    STATISTICS_CLICKED -> {
+                        val statistics = trainer.getStatistics()
+                        val statisticsMessage =
+                            "Выучено ${statistics.learnedWords} из ${statistics.totalCount} слов | ${statistics.percent}%"
+                        botService.sendMessage(chatId, statisticsMessage)
+                    }
+                }
             }
         }
     }

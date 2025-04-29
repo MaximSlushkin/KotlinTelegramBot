@@ -1,5 +1,5 @@
-hello|привет
-dog|собака
-cat|кошка
-thanks|спасибо
-house|дом
+hello|привет|3
+dog|собака|3
+cat|кошка|3
+thanks|спасибо|3
+house|дом|3
