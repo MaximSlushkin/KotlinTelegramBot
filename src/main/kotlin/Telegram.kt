@@ -1,5 +1,6 @@
 package org.example
 
+import org.example.dictionary_file.LearnWordsTrainer
 import java.net.URI
 import java.net.URLEncoder
 import java.net.http.HttpClient
@@ -66,6 +67,7 @@ fun main(args: Array<String>) {
 
     val botToken = args[0]
     val botService = TelegramBotService(botToken)
+    val trainer = LearnWordsTrainer()
     var updateId = 0
 
     val regexFindUpdateId = "\"update_id\":(\\d+)".toRegex()
