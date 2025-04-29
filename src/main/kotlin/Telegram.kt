@@ -20,13 +20,10 @@ class TelegramBotService(private val botToken: String) {
     }
 
     fun sendMessage(chatId: Long, text: String): String {
-        val encoded = URLEncoder.encode(
-            text,
-            StandardCharsets.UTF_8,
-        )
-        println(encoded)
+        val encodedText = URLEncoder.encode(text, "UTF-8")
+        println(encodedText)
 
-        val urlSendMessage = "$API$botToken/sendMessage?chat_id=$chatId&text=$text"
+        val urlSendMessage = "$API$botToken/sendMessage?chat_id=$chatId&text=$encodedText"
         val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlSendMessage)).build()
         val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
         return response.body()
@@ -74,7 +71,7 @@ fun main(args: Array<String>) {
     val regexFindUpdateId = "\"update_id\":(\\d+)".toRegex()
     val messageTextRegex: Regex = "\"text\":\"(.+?)\"".toRegex()
     val regexFindChatId = "\"chat\":\\{\"id\":(.+?),\"".toRegex()
-    val dataRegex: Regex = "\"text\":\"(.+?)\"".toRegex()
+    val dataRegex: Regex = "\"data\":\"(.+?)\"".toRegex()
 
     while (true) {
         Thread.sleep(2000)
