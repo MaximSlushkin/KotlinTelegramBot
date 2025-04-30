@@ -1,6 +1,7 @@
 package org.example
 
 import org.example.dictionary_file.LearnWordsTrainer
+import org.example.dictionary_file.Question
 import java.net.URI
 import java.net.URLEncoder
 import java.net.http.HttpClient
@@ -10,6 +11,7 @@ import java.net.http.HttpResponse
 const val API = "https://api.telegram.org/bot"
 const val STATISTICS_CLICKED = "statistics_clicked"
 const val LEARN_WORDS_CLICKED = "learn_words_clicked"
+const val CALLBACK_DATA_ANSWER_PREFIX = "answer_"
 
 class TelegramBotService(private val botToken: String) {
     private val client: HttpClient = HttpClient.newBuilder().build()
@@ -62,6 +64,58 @@ class TelegramBotService(private val botToken: String) {
         val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
         return response.body()
     }
+
+
+    fun sendQuestion(chatId: Long, question: Question, botService: TelegramBotService) {
+        val text = question.correctAnswer.originalWord
+        val inlineKeyboard = question.variants.mapIndexed { index, word ->
+            """
+            {
+                "text": "${word.translation}",
+                "callback_data": "$CALLBACK_DATA_ANSWER_PREFIX$index"
+            }
+        """.trimIndent()
+        }
+
+        val keyboardJson = """
+        [
+            ${inlineKeyboard.joinToString(",")}
+        ]
+    """.trimIndent()
+
+        val body = """
+        {
+            "chat_id": $chatId,
+            "text": "$text",
+            "reply_markup": {
+                "inline_keyboard": $keyboardJson
+            }
+        }
+    """.trimIndent()
+
+        val urlSendMessage = "$API$botService.botToken/sendMessage"
+        val request: HttpRequest = HttpRequest.newBuilder()
+            .uri(URI.create(urlSendMessage))
+            .header("Content-Type", "application/json")
+            .POST(HttpRequest.BodyPublishers.ofString(body))
+            .build()
+
+        botService.client.send(request, HttpResponse.BodyHandlers.ofString())
+    }
+
+    fun checkNextQuestionAndSend(
+        trainer: LearnWordsTrainer,
+        botService: TelegramBotService,
+        chatId: Long,
+    ) {
+        val question = trainer.getNextQuestion()
+        if (question == null) {
+            botService.sendMessage(chatId, "Все слова в словаре выучены.")
+        } else {
+            sendQuestion(chatId, question, botService)
+        }
+    }
+
 }
 
 fun main(args: Array<String>) {
@@ -92,9 +146,6 @@ fun main(args: Array<String>) {
 
         if (text != null) {
 
-            if (text.lowercase() == "hello") {
-                botService.sendMessage(chatId, "Hello!")
-            }
             if (text.lowercase() == "menu") {
                 botService.sendMenu(chatId)
             }
@@ -107,6 +158,9 @@ fun main(args: Array<String>) {
                         val statisticsMessage =
                             "Выучено ${statistics.learnedWords} из ${statistics.totalCount} слов | ${statistics.percent}%"
                         botService.sendMessage(chatId, statisticsMessage)
+                    }
+                    LEARN_WORDS_CLICKED -> {
+//                        checkNextQuestionAndSend(trainer, botService, chatId) - Ошибка
                     }
                 }
             }
