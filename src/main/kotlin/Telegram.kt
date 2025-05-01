@@ -160,7 +160,7 @@ fun main(args: Array<String>) {
                         botService.sendMessage(chatId, statisticsMessage)
                     }
                     LEARN_WORDS_CLICKED -> {
-//                        checkNextQuestionAndSend(trainer, botService, chatId) - Ошибка
+                        botService.checkNextQuestionAndSend(trainer, botService, chatId)
                     }
                 }
             }
