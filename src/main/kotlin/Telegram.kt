@@ -1,122 +1,12 @@
 package org.example
 
 import org.example.dictionary_file.LearnWordsTrainer
-import org.example.dictionary_file.Question
-import java.net.URI
-import java.net.URLEncoder
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
+import org.example.dictionary_file.TelegramBotService
 
-const val API = "https://api.telegram.org/bot"
 const val STATISTICS_CLICKED = "statistics_clicked"
 const val LEARN_WORDS_CLICKED = "learn_words_clicked"
 const val CALLBACK_DATA_ANSWER_PREFIX = "answer_"
-
-class TelegramBotService(private val botToken: String) {
-    private val client: HttpClient = HttpClient.newBuilder().build()
-
-    fun getUpdates(updateId: Int): String {
-        val urlGetUpdates = "$API$botToken/getUpdates?offset=$updateId"
-        val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlGetUpdates)).build()
-        val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
-        return response.body()
-    }
-
-    fun sendMessage(chatId: Long, text: String): String {
-        val encodedText = URLEncoder.encode(text, "UTF-8")
-        println(encodedText)
-
-        val urlSendMessage = "$API$botToken/sendMessage?chat_id=$chatId&text=$encodedText"
-        val request: HttpRequest = HttpRequest.newBuilder().uri(URI.create(urlSendMessage)).build()
-        val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
-        return response.body()
-    }
-
-    fun sendMenu(chatId: Long): String {
-        val urlSendMessage = "$API$botToken/sendMessage"
-        val sendMenuBody = """
-            {
-                "chat_id": $chatId,
-                "text": "Основное меню",
-                "reply_markup": {
-                    "inline_keyboard": [
-                        [
-                            {
-                                "text": "Изучить слова",
-                                "callback_data": "$LEARN_WORDS_CLICKED"
-                            },
-                            {
-                                "text": "Статистика",
-                                "callback_data": "$STATISTICS_CLICKED"
-                            }
-                        ]
-                    ]
-                }
-            }
-        """.trimIndent()
-
-        val request: HttpRequest = HttpRequest.newBuilder()
-            .uri(URI.create(urlSendMessage))
-            .header("Content-Type", "application/json")
-            .POST(HttpRequest.BodyPublishers.ofString(sendMenuBody))
-            .build()
-        val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
-        return response.body()
-    }
-
-
-    fun sendQuestion(chatId: Long, question: Question, botService: TelegramBotService) {
-        val text = question.correctAnswer.originalWord
-        val inlineKeyboard = question.variants.mapIndexed { index, word ->
-            """
-            {
-                "text": "${word.translation}",
-                "callback_data": "$CALLBACK_DATA_ANSWER_PREFIX$index"
-            }
-        """.trimIndent()
-        }
-
-        val keyboardJson = """
-        [
-            ${inlineKeyboard.joinToString(",")}
-        ]
-    """.trimIndent()
-
-        val body = """
-        {
-            "chat_id": $chatId,
-            "text": "$text",
-            "reply_markup": {
-                "inline_keyboard": $keyboardJson
-            }
-        }
-    """.trimIndent()
-
-        val urlSendMessage = "$API$botService.botToken/sendMessage"
-        val request: HttpRequest = HttpRequest.newBuilder()
-            .uri(URI.create(urlSendMessage))
-            .header("Content-Type", "application/json")
-            .POST(HttpRequest.BodyPublishers.ofString(body))
-            .build()
-
-        botService.client.send(request, HttpResponse.BodyHandlers.ofString())
-    }
-
-    fun checkNextQuestionAndSend(
-        trainer: LearnWordsTrainer,
-        botService: TelegramBotService,
-        chatId: Long,
-    ) {
-        val question = trainer.getNextQuestion()
-        if (question == null) {
-            botService.sendMessage(chatId, "Все слова в словаре выучены.")
-        } else {
-            sendQuestion(chatId, question, botService)
-        }
-    }
-
-}
+const val OPEN_MENU = "menu"
 
 fun main(args: Array<String>) {
 
@@ -144,25 +34,20 @@ fun main(args: Array<String>) {
         val text = textMatch?.groups?.get(1)?.value
         val data = dataRegex.find(updates)?.groups?.get(1)?.value
 
-        if (text != null) {
-
-            if (text.lowercase() == "menu") {
+        when {
+            text?.lowercase() == "$OPEN_MENU" -> {
                 botService.sendMenu(chatId)
             }
 
-            if (data != null) {
+            data == STATISTICS_CLICKED -> {
+                val statistics = trainer.getStatistics()
+                val statisticsMessage =
+                    "Выучено ${statistics.learnedWords} из ${statistics.totalCount} слов | ${statistics.percent}%"
+                botService.sendMessage(chatId, statisticsMessage)
+            }
 
-                when (data) {
-                    STATISTICS_CLICKED -> {
-                        val statistics = trainer.getStatistics()
-                        val statisticsMessage =
-                            "Выучено ${statistics.learnedWords} из ${statistics.totalCount} слов | ${statistics.percent}%"
-                        botService.sendMessage(chatId, statisticsMessage)
-                    }
-                    LEARN_WORDS_CLICKED -> {
-                        botService.checkNextQuestionAndSend(trainer, botService, chatId)
-                    }
-                }
+            data == LEARN_WORDS_CLICKED -> {
+                botService.checkNextQuestionAndSend(trainer, botService, chatId)
             }
         }
     }
