@@ -19,7 +19,7 @@ data class Question(
     val correctAnswer: Word,
 )
 
-class LearnWordsTrainer(private var question: Question? = null) {
+class LearnWordsTrainer(var question: Question? = null) {
     private val dictionary = loadDictionary()
 
     fun getStatistics(): Statistics {
@@ -58,16 +58,17 @@ class LearnWordsTrainer(private var question: Question? = null) {
         return question?.let {
             val correctAnswerIndex = it.variants.indexOf(it.correctAnswer)
 
-            if (correctAnswerIndex == userAnswerIndex) {
-                if (it.correctAnswer.correctAnswersCount < MIN_CORRECT_ANSWER) {
+            if (correctAnswerIndex == userAnswerIndex) { // Если ответ правильный
+                // Увеличиваем счетчик правильных ответов только до 3
+                if (it.correctAnswer.correctAnswersCount < 3) { // Условие на 3 правильных ответа
                     it.correctAnswer.correctAnswersCount++
-                    saveDictionary(dictionary)
+                    saveDictionary(dictionary) // Сохраняем обновления словаря
                 }
-                true
+                true // Возвращаем true, если ответ правильный
             } else {
-                false
+                false // Если неправильный ответ
             }
-        } ?: false
+        } ?: false // В случае отсутствия вопроса
     }
 
     private fun loadDictionary(): List<Word> {
