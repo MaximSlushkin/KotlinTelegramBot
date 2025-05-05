@@ -58,17 +58,17 @@ class LearnWordsTrainer(var question: Question? = null) {
         return question?.let {
             val correctAnswerIndex = it.variants.indexOf(it.correctAnswer)
 
-            if (correctAnswerIndex == userAnswerIndex) { // Если ответ правильный
-                // Увеличиваем счетчик правильных ответов только до 3
-                if (it.correctAnswer.correctAnswersCount < 3) { // Условие на 3 правильных ответа
+            if (correctAnswerIndex == userAnswerIndex) {
+
+                if (it.correctAnswer.correctAnswersCount < 3) {
                     it.correctAnswer.correctAnswersCount++
-                    saveDictionary(dictionary) // Сохраняем обновления словаря
+                    saveDictionary(dictionary)
                 }
-                true // Возвращаем true, если ответ правильный
+                true
             } else {
-                false // Если неправильный ответ
+                false
             }
-        } ?: false // В случае отсутствия вопроса
+        } ?: false
     }
 
     private fun loadDictionary(): List<Word> {
