@@ -7,6 +7,7 @@ const val STATISTICS_CLICKED = "statistics_clicked"
 const val LEARN_WORDS_CLICKED = "learn_words_clicked"
 const val CALLBACK_DATA_ANSWER_PREFIX = "answer_"
 const val OPEN_MENU = "menu"
+const val START_COMMAND = "/start"
 
 fun main(args: Array<String>) {
 
@@ -35,7 +36,7 @@ fun main(args: Array<String>) {
         val data = dataRegex.find(updates)?.groups?.get(1)?.value
 
         when {
-            text?.lowercase() == "$OPEN_MENU" -> {
+            text?.lowercase() == OPEN_MENU || text?.lowercase() == START_COMMAND -> {
                 botService.sendMenu(chatId)
             }
 
@@ -47,6 +48,26 @@ fun main(args: Array<String>) {
             }
 
             data == LEARN_WORDS_CLICKED -> {
+                botService.checkNextQuestionAndSend(trainer, botService, chatId)
+            }
+
+            data?.startsWith(CALLBACK_DATA_ANSWER_PREFIX) == true -> {
+
+                val userAnswerIndex = data.substringAfter(CALLBACK_DATA_ANSWER_PREFIX).toInt()
+
+                val isCorrect: Boolean = trainer.checkAnswer(userAnswerIndex)
+
+                val correctAnswerWord = trainer.question?.correctAnswer?.originalWord
+                val correctTranslation = trainer.question?.correctAnswer?.translation
+
+                val responseMessage = if (isCorrect) {
+                    "Правильно!"
+                } else {
+                    "Неправильно! \"$correctAnswerWord\" – это \"$correctTranslation\"."
+                }
+
+                botService.sendMessage(chatId, responseMessage)
+
                 botService.checkNextQuestionAndSend(trainer, botService, chatId)
             }
         }

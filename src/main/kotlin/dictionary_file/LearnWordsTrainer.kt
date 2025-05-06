@@ -19,11 +19,13 @@ data class Question(
     val correctAnswer: Word,
 )
 
-class LearnWordsTrainer(private var question: Question? = null) {
+class LearnWordsTrainer(val answerOptions: Int = 4,
+                        val minCorrectAnswer: Int = 3,) {
     private val dictionary = loadDictionary()
+    var question: Question? = null
 
     fun getStatistics(): Statistics {
-        val learnedWords = dictionary.filter { it.correctAnswersCount >= MIN_CORRECT_ANSWER }.size
+        val learnedWords = dictionary.filter { it.correctAnswersCount >= minCorrectAnswer }.size
         val totalCount = dictionary.size
         val percent = learnedWords * 100 / totalCount
 
@@ -32,15 +34,15 @@ class LearnWordsTrainer(private var question: Question? = null) {
 
     fun getNextQuestion(): Question? {
 
-        val notLearnedList = dictionary.filter { it.correctAnswersCount < MIN_CORRECT_ANSWER }
+        val notLearnedList = dictionary.filter { it.correctAnswersCount < minCorrectAnswer }
 
         if (notLearnedList.isEmpty()) return null
 
-        var questionWords = notLearnedList.shuffled().take(ANSWER_OPTIONS)
+        var questionWords = notLearnedList.shuffled().take(answerOptions)
         val correctAnswer = questionWords.random()
-        val remainingOptionsCount = ANSWER_OPTIONS - questionWords.size
+        val remainingOptionsCount = answerOptions - questionWords.size
         if (remainingOptionsCount > 0) {
-            val learnedList = dictionary.filter { it.correctAnswersCount >= MIN_CORRECT_ANSWER }
+            val learnedList = dictionary.filter { it.correctAnswersCount >= minCorrectAnswer }
             val additionalWords = learnedList.shuffled().take(remainingOptionsCount)
             questionWords += additionalWords
         }
@@ -59,9 +61,10 @@ class LearnWordsTrainer(private var question: Question? = null) {
             val correctAnswerIndex = it.variants.indexOf(it.correctAnswer)
 
             if (correctAnswerIndex == userAnswerIndex) {
-                if (it.correctAnswer.correctAnswersCount < MIN_CORRECT_ANSWER) {
+
+                if (it.correctAnswer.correctAnswersCount < minCorrectAnswer) {
                     it.correctAnswer.correctAnswersCount++
-                    saveDictionary(dictionary)
+                    saveDictionary()
                 }
                 true
             } else {
@@ -88,7 +91,7 @@ class LearnWordsTrainer(private var question: Question? = null) {
         return dictionary
     }
 
-    private fun saveDictionary(dictionary: List<Word>) {
+    private fun saveDictionary() {
         val wordsFile: File = File("word.txt")
         wordsFile.printWriter().use { out ->
             for (word in dictionary) {

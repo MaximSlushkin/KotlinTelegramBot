@@ -65,14 +65,14 @@ class TelegramBotService(private val botToken: String) {
         return response.body()
     }
 
-    fun sendQuestion(chatId: Long, question: Question,) {
+    fun sendQuestion(chatId: Long, question: Question) {
         val text = question.correctAnswer.originalWord
         val inlineKeyboard = question.variants.mapIndexed { index, word ->
             """
-            {
+            [{
                 "text": "${word.translation}",
                 "callback_data": "$CALLBACK_DATA_ANSWER_PREFIX$index"
-            }
+            }]
         """.trimIndent()
         }
 
@@ -91,13 +91,14 @@ class TelegramBotService(private val botToken: String) {
             }
         }
     """.trimIndent()
+
         val urlSendMessage = "$API$botToken/sendMessage"
         val request: HttpRequest = HttpRequest.newBuilder()
             .uri(URI.create(urlSendMessage))
             .header("Content-Type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(body))
             .build()
-        client.send(request, HttpResponse.BodyHandlers.ofString())
+        val response = client.send(request, HttpResponse.BodyHandlers.ofString())
     }
 
     fun checkNextQuestionAndSend(
