@@ -1,8 +1,5 @@
 package org.example.dictionary_file
 
-const val MIN_CORRECT_ANSWER = 3
-const val ANSWER_OPTIONS = 4
-
 fun Question.asConsoleString(): String {
 
     val variants = this.variants
