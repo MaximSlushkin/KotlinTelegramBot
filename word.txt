@@ -1,8 +1,8 @@
-hello|привет|3
-dog|собака|3
-cat|кошка|3
-thanks|спасибо|3
-house|дом|3
+hello|привет|0
+dog|собака|0
+cat|кошка|0
+thanks|спасибо|0
+house|дом|0
 cat|кошка|0
 box|коробка|0
 pepper|перец|0
@@ -19,7 +19,7 @@ salty|соленый|0
 spicy|острый|0
 bitter|горький|0
 sour|кислый|0
-meat|мясо|1
+meat|мясо|0
 cereal|хлопья|0
 bread|хлеб|0
 vegetables|овощи|0
@@ -36,7 +36,7 @@ salt|соль|0
 pepper|перец|0
 cheese|сыр|0
 alcohol|алкоголь|0
-soft drinks|безалкогольные напитки|1
+soft drinks|безалкогольные напитки|0
 water|вода|0
 coffee|кофе|0
 tea|чай|0
