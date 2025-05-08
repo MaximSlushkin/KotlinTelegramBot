@@ -1,13 +1,16 @@
 package org.example.dictionary_file
 
+import kotlinx.serialization.Serializable
 import java.io.File
 
+@Serializable
 data class Word(
     val originalWord: String,
     val translation: String,
     var correctAnswersCount: Int = 0
 )
 
+@Serializable
 data class Statistics(
     val learnedWords: Int,
     val totalCount: Int,
@@ -71,6 +74,11 @@ class LearnWordsTrainer(val answerOptions: Int = 4,
                 false
             }
         } ?: false
+    }
+
+    fun resetStatistics() {
+        dictionary.forEach { it.correctAnswersCount = 0 }
+        saveDictionary()
     }
 
     private fun loadDictionary(): List<Word> {
