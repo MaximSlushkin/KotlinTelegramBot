@@ -12,6 +12,7 @@ const val CALLBACK_DATA_ANSWER_PREFIX = "answer_"
 const val OPEN_MENU = "menu"
 const val START_COMMAND = "/start"
 const val RESET_STATISTICS_CLICKED = "reset_statistics_clicked"
+const val EXIT_MENU_CLICKED = "exit_menu"
 
 @Serializable
 data class Update(
@@ -79,13 +80,11 @@ data class InlineKeyBoard(
 fun main(args: Array<String>) {
 
     val botToken = args[0]
-    val botService = TelegramBotService(botToken)
+    val json = Json { ignoreUnknownKeys = true }
+    val botService = TelegramBotService(botToken, json)
     val trainer = LearnWordsTrainer()
     var lastUpdateId: Long = 0
 
-    val json = Json {
-        ignoreUnknownKeys = true
-    }
 
     while (true) {
         Thread.sleep(2000)
@@ -99,33 +98,33 @@ fun main(args: Array<String>) {
 
 
         val message = firstUpdate.message?.text
-        val chatId = firstUpdate.message?.chat?.id ?: firstUpdate.callbackQuery?.message?.chat?.id
+        val chatId = firstUpdate.message?.chat?.id ?: firstUpdate.callbackQuery?.message?.chat?.id ?: continue
         val data = firstUpdate.callbackQuery?.data
 
 
         when {
             message?.lowercase() == OPEN_MENU || message?.lowercase() == START_COMMAND -> {
-                botService.sendMenu(json, chatId)
+                botService.sendMenu(chatId)
             }
 
             data == STATISTICS_CLICKED -> {
                 val statistics = trainer.getStatistics()
                 val statisticsMessage =
                     "Выучено ${statistics.learnedWords} из ${statistics.totalCount} слов | ${statistics.percent}%"
-                botService.sendMessage(json, chatId, statisticsMessage)
+                botService.sendMessage(chatId, statisticsMessage)
             }
 
             data == LEARN_WORDS_CLICKED -> {
-                botService.checkNextQuestionAndSend(json, trainer, botService, chatId)
+                botService.checkNextQuestionAndSend(trainer, chatId)
             }
 
-            data == "exit_menu" -> {
-                botService.sendMenu(json, chatId)
+            data == EXIT_MENU_CLICKED -> {
+                botService.sendMenu(chatId)
             }
 
             data?.startsWith(CALLBACK_DATA_ANSWER_PREFIX) == true -> {
-                if (data == "exit_menu") {
-                    botService.sendMenu(json, chatId)
+                if (data == EXIT_MENU_CLICKED) {
+                    botService.sendMenu(chatId)
                 } else {
                     val userAnswerIndex = data.removePrefix(CALLBACK_DATA_ANSWER_PREFIX).toInt()
                     val isCorrect = trainer.checkAnswer(userAnswerIndex)
@@ -139,15 +138,15 @@ fun main(args: Array<String>) {
                         "Неправильно! \"$correctAnswerWord\" – это \"$correctTranslation\"."
                     }
 
-                    botService.sendMessage(json, chatId, responseMessage)
-                    botService.checkNextQuestionAndSend(json, trainer, botService, chatId)
+                    botService.sendMessage(chatId, responseMessage)
+                    botService.checkNextQuestionAndSend(trainer, chatId)
                 }
             }
 
             data == RESET_STATISTICS_CLICKED -> {
                 trainer.resetStatistics()
-                botService.sendMessage(json, chatId, "Статистика сброшена.")
-                botService.sendMenu(json, chatId)
+                botService.sendMessage(chatId, "Статистика сброшена.")
+                botService.sendMenu(chatId)
             }
         }
     }

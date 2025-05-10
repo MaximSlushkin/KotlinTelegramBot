@@ -7,7 +7,7 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 
-class TelegramBotService(private val botToken: String) {
+class TelegramBotService(private val botToken: String, private val json: Json) {
     private val client: HttpClient = HttpClient.newBuilder().build()
 
     companion object {
@@ -21,7 +21,7 @@ class TelegramBotService(private val botToken: String) {
         return response.body()
     }
 
-    fun sendMessage(json: Json, chatId: Long?, message: String): String {
+    fun sendMessage(chatId: Long, message: String): String {
         val urlSendMessage = "$API$botToken/sendMessage"
         val requestBody = SendmessageRequest(
             chatId = chatId,
@@ -39,7 +39,7 @@ class TelegramBotService(private val botToken: String) {
         return response.body()
     }
 
-    fun sendMenu(json: Json, chatId: Long?): String {
+    fun sendMenu(chatId: Long): String {
         val urlSendMessage = "$API$botToken/sendMessage"
         val requestBody = SendmessageRequest(
             chatId = chatId,
@@ -68,7 +68,8 @@ class TelegramBotService(private val botToken: String) {
         return response.body()
     }
 
-    fun sendQuestion(json: Json, chatId: Long?, question: Question) {
+    fun sendQuestion(chatId: Long, question: Question) {
+
 
         val text = question.correctAnswer.originalWord
 
@@ -77,7 +78,7 @@ class TelegramBotService(private val botToken: String) {
                 question.variants.mapIndexed { index, word ->
                     InlineKeyBoard(text = word.translation, callbackData = "$CALLBACK_DATA_ANSWER_PREFIX$index")
                 }.map { listOf(it) } + listOf(
-                    listOf(InlineKeyBoard(text = "Выйти в меню", callbackData = "exit_menu"))
+                    listOf(InlineKeyBoard(text = "Выйти в меню", callbackData = EXIT_MENU_CLICKED))
                 )
             ).flatten()
         )
@@ -96,19 +97,22 @@ class TelegramBotService(private val botToken: String) {
             .header("Content-Type", "application/json")
             .POST(HttpRequest.BodyPublishers.ofString(requestBodyString))
             .build()
+
+        val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
+        if (response.statusCode() != 200) {
+            println("Ошибка при отправке вопроса: ${response.body()}")
+        }
     }
 
     fun checkNextQuestionAndSend(
-        json: Json,
         trainer: LearnWordsTrainer,
-        botService: TelegramBotService,
-        chatId: Long?,
+        chatId: Long,
     ) {
         val question = trainer.getNextQuestion()
         if (question == null) {
-            botService.sendMessage(json, chatId, "Все слова в словаре выучены.")
+            sendMessage(chatId, "Все слова в словаре выучены.")
         } else {
-            sendQuestion(json, chatId, question)
+            sendQuestion(chatId, question)
         }
     }
 }
