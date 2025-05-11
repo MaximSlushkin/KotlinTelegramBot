@@ -76,78 +76,83 @@ data class InlineKeyBoard(
     val text: String,
 )
 
-
 fun main(args: Array<String>) {
 
     val botToken = args[0]
     val json = Json { ignoreUnknownKeys = true }
+    val trainers = HashMap<Long, LearnWordsTrainer>()
     val botService = TelegramBotService(botToken, json)
-    val trainer = LearnWordsTrainer()
     var lastUpdateId: Long = 0
-
 
     while (true) {
         Thread.sleep(2000)
         val responseString: String = botService.getUpdates(lastUpdateId)
         println(responseString)
+
         val response = json.decodeFromString<Response>(responseString)
-        val updates = response.result
-        val firstUpdate = updates.firstOrNull() ?: continue
-        val updateId = firstUpdate.updateId
-        lastUpdateId = updateId + 1
+        if (response.result.isEmpty()) continue
+        val sortedUpdates = response.result.sortedBy { it.updateId }
+        sortedUpdates.forEach { handleUpdates(it, json, botService, botToken, trainers) }
+        lastUpdateId = sortedUpdates.last().updateId + 1
+    }
+}
 
+fun handleUpdates(
+    update: Update,
+    json: Json,
+    botService: TelegramBotService,
+    botToken: String,
+    trainer: HashMap<Long, LearnWordsTrainer>
+) {
+    val message = update.message?.text
+    val chatId = update.message?.chat?.id ?: update.callbackQuery?.message?.chat?.id ?: return
+    val data = update.callbackQuery?.data
+    val trainer = trainer.getOrPut(chatId) { LearnWordsTrainer("$chatId.txt") }
 
-        val message = firstUpdate.message?.text
-        val chatId = firstUpdate.message?.chat?.id ?: firstUpdate.callbackQuery?.message?.chat?.id ?: continue
-        val data = firstUpdate.callbackQuery?.data
+    when {
+        message?.lowercase() == OPEN_MENU || message?.lowercase() == START_COMMAND -> {
+            botService.sendMenu(chatId)
+        }
 
+        data == STATISTICS_CLICKED -> {
+            val statistics = trainer.getStatistics()
+            val statisticsMessage =
+                "Выучено ${statistics.learnedWords} из ${statistics.totalCount} слов | ${statistics.percent}%"
+            botService.sendMessage(chatId, statisticsMessage)
+        }
 
-        when {
-            message?.lowercase() == OPEN_MENU || message?.lowercase() == START_COMMAND -> {
+        data == LEARN_WORDS_CLICKED -> {
+            botService.checkNextQuestionAndSend(trainer, chatId)
+        }
+
+        data == EXIT_MENU_CLICKED -> {
+            botService.sendMenu(chatId)
+        }
+
+        data?.startsWith(CALLBACK_DATA_ANSWER_PREFIX) == true -> {
+            if (data == EXIT_MENU_CLICKED) {
                 botService.sendMenu(chatId)
-            }
+            } else {
+                val userAnswerIndex = data.removePrefix(CALLBACK_DATA_ANSWER_PREFIX).toInt()
+                val isCorrect = trainer.checkAnswer(userAnswerIndex)
 
-            data == STATISTICS_CLICKED -> {
-                val statistics = trainer.getStatistics()
-                val statisticsMessage =
-                    "Выучено ${statistics.learnedWords} из ${statistics.totalCount} слов | ${statistics.percent}%"
-                botService.sendMessage(chatId, statisticsMessage)
-            }
+                val correctAnswerWord = trainer.question?.correctAnswer?.originalWord
+                val correctTranslation = trainer.question?.correctAnswer?.translation
 
-            data == LEARN_WORDS_CLICKED -> {
+                val responseMessage = if (isCorrect) {
+                    "Правильно!"
+                } else {
+                    "Неправильно! \"$correctAnswerWord\" – это \"$correctTranslation\"."
+                }
+                botService.sendMessage(chatId, responseMessage)
                 botService.checkNextQuestionAndSend(trainer, chatId)
             }
+        }
 
-            data == EXIT_MENU_CLICKED -> {
-                botService.sendMenu(chatId)
-            }
-
-            data?.startsWith(CALLBACK_DATA_ANSWER_PREFIX) == true -> {
-                if (data == EXIT_MENU_CLICKED) {
-                    botService.sendMenu(chatId)
-                } else {
-                    val userAnswerIndex = data.removePrefix(CALLBACK_DATA_ANSWER_PREFIX).toInt()
-                    val isCorrect = trainer.checkAnswer(userAnswerIndex)
-
-                    val correctAnswerWord = trainer.question?.correctAnswer?.originalWord
-                    val correctTranslation = trainer.question?.correctAnswer?.translation
-
-                    val responseMessage = if (isCorrect) {
-                        "Правильно!"
-                    } else {
-                        "Неправильно! \"$correctAnswerWord\" – это \"$correctTranslation\"."
-                    }
-
-                    botService.sendMessage(chatId, responseMessage)
-                    botService.checkNextQuestionAndSend(trainer, chatId)
-                }
-            }
-
-            data == RESET_STATISTICS_CLICKED -> {
-                trainer.resetStatistics()
-                botService.sendMessage(chatId, "Статистика сброшена.")
-                botService.sendMenu(chatId)
-            }
+        data == RESET_STATISTICS_CLICKED -> {
+            trainer.resetStatistics()
+            botService.sendMessage(chatId, "Статистика сброшена.")
+            botService.sendMenu(chatId)
         }
     }
 }

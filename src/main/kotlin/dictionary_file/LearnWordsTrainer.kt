@@ -22,8 +22,12 @@ data class Question(
     val correctAnswer: Word,
 )
 
-class LearnWordsTrainer(val answerOptions: Int = 4,
-                        val minCorrectAnswer: Int = 3,) {
+class LearnWordsTrainer(
+    private val fileName: String = "words.txt",
+    val answerOptions: Int = 4,
+    val minCorrectAnswer: Int = 3,
+    ) {
+
     private val dictionary = loadDictionary()
     var question: Question? = null
 
@@ -82,7 +86,11 @@ class LearnWordsTrainer(val answerOptions: Int = 4,
     }
 
     private fun loadDictionary(): List<Word> {
-        val wordsFile: File = File("word.txt")
+        val wordsFile: File = File(fileName)
+        if (!wordsFile.exists()) {
+            File("words.txt").copyTo(wordsFile)
+        }
+
         val dictionary = mutableListOf<Word>()
 
         val lines: List<String> = wordsFile.readLines()
@@ -100,7 +108,7 @@ class LearnWordsTrainer(val answerOptions: Int = 4,
     }
 
     private fun saveDictionary() {
-        val wordsFile: File = File("word.txt")
+        val wordsFile: File = File(fileName)
         wordsFile.printWriter().use { out ->
             for (word in dictionary) {
                 out.println("${word.originalWord}|${word.translation}|${word.correctAnswersCount}")
