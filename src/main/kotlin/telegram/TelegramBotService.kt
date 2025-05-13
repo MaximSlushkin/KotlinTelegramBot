@@ -1,11 +1,16 @@
-package org.example.dictionary_file
+package org.example.telegram
 
 import kotlinx.serialization.json.Json
-import org.example.*
+import org.example.dictionary_file.LearnWordsTrainer
+import org.example.dictionary_file.Question
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import org.example.constants.*
+import org.example.telegram.models.InlineKeyBoard
+import org.example.telegram.models.ReplyMarkup
+import org.example.telegram.models.SendmessageRequest
 
 class TelegramBotService(private val botToken: String) {
     val json: Json = Json { ignoreUnknownKeys = true }
@@ -40,7 +45,6 @@ class TelegramBotService(private val botToken: String) {
         return response.body()
     }
 
-
     fun sendMenu(chatId: Long): String {
         val urlSendMessage = "$API$botToken/sendMessage"
         val requestBody = SendmessageRequest(
@@ -72,13 +76,12 @@ class TelegramBotService(private val botToken: String) {
 
     fun sendQuestion(chatId: Long, question: Question) {
 
-
         val text = question.correctAnswer.originalWord
 
         val replyMarkup = ReplyMarkup(
             listOf(
                 question.variants.mapIndexed { index, word ->
-                    InlineKeyBoard(text = word.translation, callbackData = "$CALLBACK_DATA_ANSWER_PREFIX$index")
+                    InlineKeyBoard(text = word.translation, callbackData = "${CALLBACK_DATA_ANSWER_PREFIX}$index")
                 }.map { listOf(it) } + listOf(
                     listOf(InlineKeyBoard(text = "Выйти в меню", callbackData = EXIT_MENU_CLICKED))
                 )

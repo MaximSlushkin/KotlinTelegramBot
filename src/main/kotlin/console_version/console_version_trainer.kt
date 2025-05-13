@@ -1,4 +1,8 @@
-package org.example.dictionary_file
+package org.example.console_version
+
+import org.example.dictionary_file.LearnWordsTrainer
+import org.example.dictionary_file.Question
+import org.example.dictionary_file.Word
 
 fun Question.asConsoleString(): String {
 
