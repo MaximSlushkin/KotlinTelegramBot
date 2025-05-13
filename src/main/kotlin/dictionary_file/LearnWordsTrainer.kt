@@ -1,6 +1,7 @@
 package org.example.dictionary_file
 
 import kotlinx.serialization.Serializable
+import org.example.DEFAULT_DICTIONARY
 import java.io.File
 
 @Serializable
@@ -23,7 +24,7 @@ data class Question(
 )
 
 class LearnWordsTrainer(
-    private val fileName: String = "words.txt",
+    private val fileName: String = DEFAULT_DICTIONARY,
     val answerOptions: Int = 4,
     val minCorrectAnswer: Int = 3,
     ) {
@@ -88,7 +89,7 @@ class LearnWordsTrainer(
     private fun loadDictionary(): List<Word> {
         val wordsFile: File = File(fileName)
         if (!wordsFile.exists()) {
-            File("words.txt").copyTo(wordsFile)
+            File(DEFAULT_DICTIONARY).copyTo(wordsFile)
         }
 
         val dictionary = mutableListOf<Word>()

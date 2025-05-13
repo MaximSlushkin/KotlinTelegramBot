@@ -7,7 +7,8 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 
-class TelegramBotService(private val botToken: String, private val json: Json) {
+class TelegramBotService(private val botToken: String) {
+    val json: Json = Json { ignoreUnknownKeys = true }
     private val client: HttpClient = HttpClient.newBuilder().build()
 
     companion object {
@@ -38,6 +39,7 @@ class TelegramBotService(private val botToken: String, private val json: Json) {
         val response: HttpResponse<String> = client.send(request, HttpResponse.BodyHandlers.ofString())
         return response.body()
     }
+
 
     fun sendMenu(chatId: Long): String {
         val urlSendMessage = "$API$botToken/sendMessage"
