@@ -1,4 +1,8 @@
-package org.example.dictionary_file
+package org.example.console_version
+
+import org.example.dictionary_file.LearnWordsTrainer
+import org.example.dictionary_file.Question
+import org.example.dictionary_file.Word
 
 fun Question.asConsoleString(): String {
 
@@ -11,7 +15,7 @@ fun Question.asConsoleString(): String {
 fun main() {
 
     val trainer = try {
-        LearnWordsTrainer()
+        LearnWordsTrainer(minCorrectAnswer = 3, answerOptions = 4)
     } catch (e: Exception) {
         println("Невозможно загрузить словарь!")
         return

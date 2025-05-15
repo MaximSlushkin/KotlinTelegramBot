@@ -1,29 +1,14 @@
 package org.example.dictionary_file
 
-import kotlinx.serialization.Serializable
+import org.example.constants.*
 import java.io.File
 
-@Serializable
-data class Word(
-    val originalWord: String,
-    val translation: String,
-    var correctAnswersCount: Int = 0
-)
+class LearnWordsTrainer(
+    private val fileName: String = DEFAULT_DICTIONARY,
+    val answerOptions: Int = 4,
+    val minCorrectAnswer: Int = 3,
+) {
 
-@Serializable
-data class Statistics(
-    val learnedWords: Int,
-    val totalCount: Int,
-    val percent: Int,
-)
-
-data class Question(
-    val variants: List<Word>,
-    val correctAnswer: Word,
-)
-
-class LearnWordsTrainer(val answerOptions: Int = 4,
-                        val minCorrectAnswer: Int = 3,) {
     private val dictionary = loadDictionary()
     var question: Question? = null
 
@@ -51,7 +36,6 @@ class LearnWordsTrainer(val answerOptions: Int = 4,
         }
 
         val shuffledVariants = questionWords.shuffled()
-
         question = Question(
             variants = shuffledVariants,
             correctAnswer = correctAnswer,
@@ -82,17 +66,18 @@ class LearnWordsTrainer(val answerOptions: Int = 4,
     }
 
     private fun loadDictionary(): List<Word> {
-        val wordsFile: File = File("word.txt")
-        val dictionary = mutableListOf<Word>()
+        val wordsFile: File = File(fileName)
+        if (!wordsFile.exists()) {
+            File(DEFAULT_DICTIONARY).copyTo(wordsFile)
+        }
 
+        val dictionary = mutableListOf<Word>()
         val lines: List<String> = wordsFile.readLines()
         for (line in lines) {
             val parts = line.split("|")
-
             val word = parts[0]
             val translation = parts[1]
             val correctAnswersCount = parts.getOrNull(2)?.toIntOrNull() ?: 0
-
             val wordObject = Word(word, translation, correctAnswersCount)
             dictionary.add(wordObject)
         }
@@ -100,7 +85,7 @@ class LearnWordsTrainer(val answerOptions: Int = 4,
     }
 
     private fun saveDictionary() {
-        val wordsFile: File = File("word.txt")
+        val wordsFile: File = File(fileName)
         wordsFile.printWriter().use { out ->
             for (word in dictionary) {
                 out.println("${word.originalWord}|${word.translation}|${word.correctAnswersCount}")
