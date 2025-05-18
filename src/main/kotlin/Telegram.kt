@@ -5,6 +5,7 @@ import org.example.telegram.TelegramBotService
 import org.example.constants.*
 import org.example.telegram.models.Response
 import org.example.telegram.models.Update
+import java.io.IOException
 
 fun main(args: Array<String>) {
 
@@ -15,17 +16,28 @@ fun main(args: Array<String>) {
     var lastUpdateId: Long = 0
 
     while (true) {
-        Thread.sleep(2000)
-        val responseString: String = botService.getUpdates(lastUpdateId)
-        println(responseString)
+        try {
+            Thread.sleep(2000)
+            val responseString: String = botService.getUpdates(lastUpdateId)
+            println(responseString)
 
-        val response = botService.json.decodeFromString<Response>(responseString)
-        if (response.result.isEmpty()) continue
-        val sortedUpdates = response.result.sortedBy { it.updateId }
-        sortedUpdates.forEach { handleUpdates(it, botService, trainers) }
-        lastUpdateId = sortedUpdates.last().updateId + 1
+            val response = botService.json.decodeFromString<Response>(responseString)
+            if (response.result.isEmpty()) continue
+
+            val sortedUpdates = response.result.sortedBy { it.updateId }
+            sortedUpdates.forEach { handleUpdates(it, botService, trainers) }
+            lastUpdateId = sortedUpdates.last().updateId + 1
+
+        } catch (e: IOException) {
+            println("IO Exception occurred: ${e.message}")
+            Thread.sleep(5000)
+        } catch (e: Exception) {
+            println("An unexpected error occurred: ${e.message}")
+            Thread.sleep(5000)
+        }
     }
 }
+
 
 fun handleUpdates(
     update: Update,
